@@ -1,0 +1,14 @@
+{
+  "tasks": {
+    "test": "deno test --allow-read",
+    "run": "deno run --allow-read main.ts",
+    "setup": "deno --allow-write --allow-read setup.ts"
+  },
+  "imports": {
+    "@std/testing/bdd": "jsr:@std/testing/bdd",
+    "@std/expect": "jsr:@std/expect",
+    "@std/path": "https://deno.land/std/path/mod.ts",
+    "@std/flags": "https://deno.land/std@0.200.0/flags/mod.ts",
+    "@std/fs/exists": "jsr:@std/fs/exists"
+  }
+}

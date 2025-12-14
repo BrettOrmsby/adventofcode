@@ -1,0 +1,4 @@
+/data
+.vscode
+deno.lock
+.DS_Store
