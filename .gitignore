@@ -2,3 +2,4 @@
 .vscode
 deno.lock
 .DS_Store
+todo.todo

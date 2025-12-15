@@ -1,6 +1,8 @@
 import type { Solution } from "../../common/index.ts";
 
 export class Day01Year2025 implements Solution {
+  // Turn the dial in the indicated direction for each line, wrapping to keep in the range [0, 99]
+  // and sum the times we hit 0
   first(input: string): number {
     let password = 0;
     let pointing = 50;
@@ -9,11 +11,12 @@ export class Day01Year2025 implements Solution {
       const turnAmount = Number(line.slice(1));
       pointing = (pointing + directionMagnitude * turnAmount) % 100;
       if (pointing < 0) pointing += 100;
-      if (pointing == 0) password += 1;
+      if (pointing === 0) password += 1;
     }
     return password;
   }
 
+  // Instead of turning the dial by the full amount each time, we turn it by one that many times
   second(input: string): number {
     let password = 0;
     let pointing = 50;

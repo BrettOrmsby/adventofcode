@@ -1,52 +1,33 @@
 import type { Solution } from "../../common/index.ts";
 
-export class Day11Year2025 implements Solution {
-  first(input: string): number {
-    const dataToGraph = () => {
-      const data = input;
-      const graph: Record<string, string[]> = Object.fromEntries(
-        data.split("\n").map((line) => {
-          const [from, ...to] = line.split(/:? /g);
-          return [from, to];
-        })
-      );
+type Graph = Record<string, string[]>;
 
-      return graph;
+export class Day11Year2025 implements Solution {
+  // Complete a simple depth first search to find the number of paths
+  // ending in "out"
+  first(input: string): number {
+    const graph = this.createGraph(input);
+
+    const map = new Map<string, number>();
+    const dfs = (node: string): number => {
+      if (node === "out") {
+        return 1;
+      }
+
+      if (map.has(node)) return map.get(node)!;
+
+      const sum = graph[node].reduce((sum, next) => sum + dfs(next), 0);
+      map.set(node, sum);
+      return sum;
     };
 
-    const graph = dataToGraph();
-
-    // A Que would be better, but this is what we have
-    // Or A DFS with stack
-    let count = 0;
-    let paths = graph.you.map((start) => ["you", start]);
-    while (paths.length > 0) {
-      const newPaths: string[][] = [];
-      for (const path of paths) {
-        for (const next of graph[path.at(-1)!]) {
-          if (next === "out") count += 1;
-          else if (!path.includes(next)) newPaths.push([...path, next]);
-        }
-      }
-      paths = newPaths;
-    }
-    return count;
+    return dfs("you");
   }
 
+  // We still do a depth first search, but we also keep track of if
+  // we hit `dax` or `fft` between `svr` and `out`
   second(input: string): number {
-    const dataToGraph = () => {
-      const data = input;
-      const graph: Record<string, string[]> = Object.fromEntries(
-        data.split("\n").map((line) => {
-          const [from, ...to] = line.trim().split(/:? /g);
-          return [from, to];
-        })
-      );
-
-      return graph;
-    };
-
-    const graph = dataToGraph();
+    const graph = this.createGraph(input);
     const map = new Map<string, number>();
     const dfs = (n: string, hasDAC: boolean, hasFFT: boolean): number => {
       if (n === "out") {
@@ -66,5 +47,16 @@ export class Day11Year2025 implements Solution {
     };
 
     return dfs("svr", false, false);
+  }
+
+  private createGraph(input: string): Graph {
+    const graph: Graph = Object.fromEntries(
+      input.split("\n").map((line) => {
+        const [from, ...to] = line.split(/:? /g);
+        return [from, to];
+      })
+    );
+
+    return graph;
   }
 }

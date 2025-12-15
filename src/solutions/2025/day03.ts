@@ -1,11 +1,13 @@
 import type { Solution } from "../../common/index.ts";
 
 export class Day03Year2025 implements Solution {
+  // Loop through the digits of each line and keep track of the first and second largest digits.
+  // Then sum the results
   first(input: string): number {
     const result = input
       .split("\n")
       .map((line) => {
-        const sequence = line.split("").map((number) => parseInt(number));
+        const sequence = line.split("").map(Number);
 
         let firstDigit = 0;
         let secondDigit = 0;
@@ -23,6 +25,11 @@ export class Day03Year2025 implements Solution {
     return result;
   }
 
+  // Loop through the digits of each line and build a 12 digit number.
+  // Whenever we hit a digit that is larger than one in the number (start by checking
+  // most significant digit to least), we set it at that position, and reset all
+  // following digits to 0. Special cases are handled when we are on the last 12 digits,
+  // since we can't reset the first few characters anymore
   second(input: string): number {
     const result = input
       .split("\n")
@@ -31,7 +38,7 @@ export class Day03Year2025 implements Solution {
         const maxNumber = new Array(12).fill(0);
 
         for (let i = 0; i < sequence.length; i++) {
-          // for the last 12 values we can no longer change the first few digits in the max number
+          // For the last 12 values we can no longer change the first few digits in the max number
           let startIndexCompare = 0;
           if (sequence.length - i < 12) {
             startIndexCompare = 12 - (sequence.length - i);

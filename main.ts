@@ -20,7 +20,6 @@ const SOLUTIONS: Record<number, Record<number, Solution>> = {
 };
 
 const { year, day } = parseArgs();
-console.log(`Running solution for year ${year} day ${day}`);
 run(year, day);
 
 interface CLIArguments {
@@ -50,15 +49,25 @@ function parseArgs(): CLIArguments {
     console.error("Invalid Year");
     Deno.exit(1);
   }
-  if (!Object.hasOwn(SOLUTIONS[year], day)) {
-    console.error("Invalid Day");
-    Deno.exit(1);
-  }
 
   return { year, day };
 }
 
 async function run(year: number, day: number) {
+  if (day === -1) {
+    console.log(`Running ${year} Suit`);
+    console.time("Total Time");
+    for (const day in SOLUTIONS[year]) {
+      const input = await loadInput(year, Number(day));
+      const daySolution = SOLUTIONS[year][day];
+      daySolution.first(input);
+      daySolution.second(input);
+    }
+    console.timeEnd("Total Time");
+    return;
+  }
+
+  console.log(`Running solution for year ${year} day ${day}`);
   const input = await loadInput(year, day);
   const daySolution = SOLUTIONS[year][day];
 

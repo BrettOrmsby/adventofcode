@@ -1,6 +1,7 @@
 import type { Solution } from "../../common/index.ts";
 
 export class Day09Year2025 implements Solution {
+  // Get all distinct pairs of red tiles compare their areas
   first(input: string): number {
     const data = input.split("\n").map((line) => line.split(",").map(Number));
 
@@ -10,27 +11,27 @@ export class Day09Year2025 implements Solution {
       for (let j = 0; j < data.length; j++) {
         const [x2, y2] = data[j];
         const area = (Math.abs(x1 - x2) + 1) * (Math.abs(y1 - y2) + 1);
-        if (area > maxArea) {
-          maxArea = area;
-        }
+        maxArea = Math.max(area, maxArea);
       }
     }
     return maxArea;
   }
 
+  // I needed some help on this one. This solution abuses the input by doing the same as
+  // part 1, but only counting rectangles that are not intersected by any edge.
   second(input: string): number {
     const data = input.split("\n").map((line) => line.split(",").map(Number));
 
+    // Determines if a rectangle is fully inside the red and green tiles
     const isViable = (
       x1: number,
       y1: number,
       x2: number,
       y2: number
     ): boolean => {
-      // TODO: here is where I failed
       for (let i = 0; i < data.length; i++) {
-        const p1 = data[i];
-        const p2 = data[(i + 1) % data.length];
+        const start = data[i];
+        const end = data[(i + 1) % data.length];
         const overlap = (
           aStart: number,
           aEnd: number,
@@ -51,13 +52,15 @@ export class Day09Year2025 implements Solution {
             aEnd >= bStart &&
             aEnd >= bEnd
           );
-        if (overlap(p1[1], p2[1], y1, y2) && overlap(p1[0], p2[0], x1, x2))
+        if (
+          overlap(start[1], end[1], y1, y2) &&
+          overlap(start[0], end[0], x1, x2)
+        )
           return false;
       }
       return true;
     };
 
-    // Need to find a way to ensure the box of any two corners has all the things within filled
     let maxArea = 0;
     for (let i = 0; i < data.length - 1; i++) {
       const [x1, y1] = data[i];
@@ -66,7 +69,6 @@ export class Day09Year2025 implements Solution {
         const area = (Math.abs(x1 - x2) + 1) * (Math.abs(y1 - y2) + 1);
         if (area > maxArea) {
           if (isViable(x1, y1, x2, y2)) {
-            console.log(x1, y1, x2, y2);
             maxArea = area;
           }
         }
