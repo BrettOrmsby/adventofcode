@@ -1,4 +1,4 @@
-import type { Solution } from "../../common/index.ts";
+import { DisjointSetUnion, type Solution } from "../../common/index.ts";
 
 interface BoxPair {
   box: string;
@@ -7,133 +7,62 @@ interface BoxPair {
 }
 
 export class Day08Year2025 implements Solution {
-  // Start by calculating the distance between all distinct pairs of boxes and sorting it.
-  // Then we go through the boxes to form 1000 connections. If multiple chains are connected
-  // together, then we need to merge them. Finally, we count the sizes of the chains.
+  // Create and order pairs of boxes by shortest distance, then
+  // use a disjoint set union to handle connected components
   first(input: string): number {
     const boxes = input.split("\n");
 
-    const orderedPairs: BoxPair[] = [];
-    for (let i = 0; i < boxes.length - 1; i++) {
-      for (let j = i + 1; j < boxes.length; j++) {
-        orderedPairs.push({
-          box: boxes[i],
-          connection: boxes[j],
-          dist: this.distanceBetween(boxes[i], boxes[j]),
-        });
-      }
-    }
-    orderedPairs.sort((a, b) => a.dist - b.dist);
+    const orderedPairs = this.getOrderedPairs(boxes);
 
-    const connections: Record<string, number> = {};
-
-    let i = 0;
-    let connectionCount = 0;
-    while (connectionCount < 1000 && i < orderedPairs.length) {
+    const disjointSetUnion = new DisjointSetUnion<string>();
+    for (let i = 0; i < 1000; i++) {
       const { box, connection } = orderedPairs[i];
-
-      if (box in connections) {
-        if (connection in connections) {
-          // need to merge connections
-          const swapID = connections[connection];
-          for (const key in connections) {
-            if (connections[key] == swapID) {
-              connections[key] = connections[box];
-            }
-          }
-        } else {
-          connections[connection] = connections[box];
-        }
-      } else if (connection in connections) {
-        connections[box] = connections[connection];
-      } else {
-        connections[box] = connectionCount;
-        connections[connection] = connectionCount;
-      }
-
-      connectionCount += 1;
-      i += 1;
+      disjointSetUnion.unionSets(box, connection);
     }
+    const sortedSizes = disjointSetUnion
+      .unionSizes()
+      .values()
+      .toArray()
+      .sort((a, b) => b - a);
 
-    // Now lets count sizes of the connections
-    const connectionChains = Object.values(connections).reduce(
-      (map: Record<string, number>, id: number) => {
-        if (id in map) {
-          map[id] += 1;
-        } else {
-          map[id] = 1;
-        }
-        return map;
-      },
-      {}
-    );
-
-    // Now we sort the connections to get the max 3
-    const maxConnections = Object.values(connectionChains).sort(
-      (a, b) => b - a
-    );
-
-    const result = maxConnections[0] * maxConnections[1] * maxConnections[2];
+    const result = sortedSizes[0] * sortedSizes[1] * sortedSizes[2];
     return result;
   }
 
-  // We do the exact same thing as part 1, but repeat until everything
-  // is connected
+  // We do the exact same thing as part 1, but repeat until all components
+  // are connected
   second(input: string): number {
     const boxes = input.split("\n");
 
-    const orderedPairs: BoxPair[] = [];
-    for (let i = 0; i < boxes.length - 1; i++) {
-      for (let j = i + 1; j < boxes.length; j++) {
-        orderedPairs.push({
-          box: boxes[i],
-          connection: boxes[j],
-          dist: this.distanceBetween(boxes[i], boxes[j]),
-        });
-      }
-    }
-    orderedPairs.sort((a, b) => a.dist - b.dist);
+    const orderedPairs = this.getOrderedPairs(boxes);
 
-    const connections: Record<string, number> = {};
-
+    const disjointSetUnion = new DisjointSetUnion<string>();
     let i = 0;
-    let connectionCount = 0;
-    while (i < orderedPairs.length) {
+    while (true) {
       const { box, connection } = orderedPairs[i];
+      disjointSetUnion.unionSets(box, connection);
+      i += 1;
 
-      if (box in connections) {
-        if (connection in connections) {
-          // need to merge connections
-          const swapID = connections[connection];
-          for (const key in connections) {
-            if (connections[key] == swapID) {
-              connections[key] = connections[box];
-            }
-          }
-        } else {
-          connections[connection] = connections[box];
-        }
-      } else if (connection in connections) {
-        connections[box] = connections[connection];
-      } else {
-        connections[box] = connectionCount;
-        connections[connection] = connectionCount;
-      }
-
-      const chains = Object.values(connections);
-      if (
-        chains.length == boxes.length &&
-        chains.every((link) => link == chains[0])
-      ) {
+      if (disjointSetUnion.getUnionCount() === boxes.length - 1) {
         const [x, ..._] = this.toNums(box);
         const [x2, ...__] = this.toNums(connection);
         return x * x2;
       }
-
-      connectionCount += 1;
-      i += 1;
     }
-    return -1;
+  }
+
+  private getOrderedPairs(boxes: string[]): BoxPair[] {
+    const orderedPairs: BoxPair[] = [];
+    for (let i = 0; i < boxes.length - 1; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        orderedPairs.push({
+          box: boxes[i],
+          connection: boxes[j],
+          dist: this.distanceBetween(boxes[i], boxes[j]),
+        });
+      }
+    }
+    return orderedPairs.sort((a, b) => a.dist - b.dist);
   }
 
   private toNums(line: string) {
