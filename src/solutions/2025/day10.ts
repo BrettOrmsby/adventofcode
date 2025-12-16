@@ -1,4 +1,4 @@
-import type { Solution } from "../../common/index.ts";
+import { combinations, type Solution } from "../../common/index.ts";
 
 interface MachineRow {
   indicatorLights: number;
@@ -79,13 +79,13 @@ export class Day10Year2025 implements Solution {
 
       // Organize combinations into a map by their bits (parity, odds=1)
       const parityCombinations: Map<number, ButtonCombination[]> = new Map();
-      buttonCombinations.forEach((combination) => {
+      for (const combination of buttonCombinations) {
         if (parityCombinations.has(combination.bits)) {
           parityCombinations.get(combination.bits)!.push(combination);
         } else {
           parityCombinations.set(combination.bits, [combination]);
         }
-      });
+      }
       sum += recurse(joltage, parityCombinations);
     }
     return sum;
@@ -125,9 +125,7 @@ export class Day10Year2025 implements Solution {
   private getButtonCombinations(
     buttons: number[],
     joltageSize: number
-  ): ButtonCombination[] {
-    const combinations: ButtonCombination[] = [];
-
+  ): Iterable<ButtonCombination> {
     const addButtonToArr = (button: number, arr: number[]) => {
       button
         .toString(2)
@@ -137,26 +135,20 @@ export class Day10Year2025 implements Solution {
       return arr;
     };
 
-    for (const button of buttons) {
-      const l = combinations.length;
-      for (let i = 0; i < l; i++) {
-        combinations.push({
-          count: combinations[i].count + 1,
-          bits: button ^ combinations[i].bits,
-          buttonSums: addButtonToArr(button, [...combinations[i].buttonSums]),
-        });
-      }
-      combinations.push({
-        count: 1,
-        bits: button,
-        buttonSums: addButtonToArr(button, new Array(joltageSize).fill(0)),
-      });
-    }
-    combinations.push({
-      count: 0,
-      bits: 0,
-      buttonSums: new Array(joltageSize).fill(0),
+    return combinations(buttons).map((buttonCombo): ButtonCombination => {
+      const bits = buttonCombo.reduce(
+        (prev, curr) => prev ^ curr,
+        buttonCombo[0] ^ buttonCombo[0]
+      );
+      const buttonSums = buttonCombo.reduce(
+        (prev, curr) => addButtonToArr(curr, prev),
+        new Array(joltageSize).fill(0)
+      );
+      return {
+        bits,
+        buttonSums,
+        count: buttonCombo.length,
+      };
     });
-    return combinations;
   }
 }
