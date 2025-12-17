@@ -3,6 +3,11 @@ import { loadInput, type Solution } from "./src/common/index.ts";
 import * as solutions from "./src/solutions/index.ts";
 
 const SOLUTIONS: Record<number, Record<number, Solution>> = {
+  2015: {
+    1: new solutions.Day01Year2015(),
+    2: new solutions.Day02Year2015(),
+    3: new solutions.Day03Year2015(),
+  },
   2025: {
     1: new solutions.Day01Year2025(),
     2: new solutions.Day02Year2025(),
