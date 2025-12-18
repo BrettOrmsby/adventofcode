@@ -10,6 +10,7 @@ const SOLUTIONS: Record<number, Record<number, Solution>> = {
     4: new solutions.Day04Year2015(),
     5: new solutions.Day05Year2015(),
     6: new solutions.Day06Year2015(),
+    7: new solutions.Day07Year2015(),
   },
   2025: {
     1: new solutions.Day01Year2025(),
