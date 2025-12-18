@@ -1,6 +1,6 @@
 # Advent of Code Solutions
 
-You can find my list of solutions under `src/solutions`.
+You can find my list of solutions under `src/solutions`. If you test solutions with this code, note that many of the data inputs I use are already trimmed unless the final whitespace is dependent for the solution.
 
 ## Philosophy
 
