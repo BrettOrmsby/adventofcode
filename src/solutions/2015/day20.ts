@@ -2,8 +2,8 @@ import type { Solution } from "../../common/index.ts";
 
 export class Day20Year2015 implements Solution {
   // Brute force the number of presents by looping over
-  // each number and looking for all its divisors
-  // Note: this takes around 6 minutes of running
+  // houses and then each number from 1...SQRT(houseNumber)
+  // and add both divisors, if they exist, to the present total
   first(input: string): number {
     const minPresents = parseInt(input) / 10;
     let houseNumber = 0;
@@ -11,19 +11,22 @@ export class Day20Year2015 implements Solution {
 
     while (numberPresent < minPresents) {
       houseNumber += 1;
-      numberPresent = houseNumber;
-      for (let i = 1; i <= houseNumber / 2; i++) {
+      numberPresent = 0;
+      for (let i = 1; i * i <= houseNumber; i++) {
         if (houseNumber % i === 0) {
           numberPresent += i;
+          const otherDivisor = houseNumber / i;
+          if (i !== otherDivisor) {
+            numberPresent += otherDivisor;
+          }
         }
       }
     }
     return houseNumber;
   }
 
-  // Brute force the same as part 1, but ignore some of the
-  // lower devisors if the house number is high enough
-  // Note: this takes around 6 minutes of running
+  // Do the same thing as part 1, but only add divisors where
+  // houseNumber <= divisor * 50
   second(input: string): number {
     const minPresents = parseInt(input) / 11;
     let houseNumber = 0;
@@ -31,11 +34,17 @@ export class Day20Year2015 implements Solution {
 
     while (numberPresent < minPresents) {
       houseNumber += 1;
-      numberPresent = houseNumber;
-      const start = Math.ceil(houseNumber / 50);
-      for (let i = start; i <= houseNumber / 2; i++) {
+      numberPresent = 0;
+
+      for (let i = 1; i * i <= houseNumber; i++) {
         if (houseNumber % i === 0) {
-          numberPresent += i;
+          if (houseNumber <= i * 50) {
+            numberPresent += i;
+          }
+          const otherDivisor = houseNumber / i;
+          if (i !== otherDivisor && houseNumber <= otherDivisor * 50) {
+            numberPresent += otherDivisor;
+          }
         }
       }
     }
