@@ -19,3 +19,4 @@ export * from "./day18.ts";
 export * from "./day19.ts";
 export * from "./day20.ts";
 export * from "./day21.ts";
+export * from "./day22.ts";
