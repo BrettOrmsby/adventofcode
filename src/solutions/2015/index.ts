@@ -22,3 +22,4 @@ export * from "./day21.ts";
 export * from "./day22.ts";
 export * from "./day23.ts";
 export * from "./day24.ts";
+export * from "./day25.ts";
