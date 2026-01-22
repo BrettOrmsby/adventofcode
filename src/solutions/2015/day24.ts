@@ -1,174 +1,103 @@
-import { combinations, type Solution } from "../../common/index.ts";
+import { type Solution } from "../../common/index.ts";
 
-interface Group {
-  product: number;
-  sum: number;
+type Result = {
   size: number;
-}
-
-type Grouping = {
-  group: number[];
-  remainder: number[];
+  product: number;
 };
 
 export class Day24Year2015 implements Solution {
-  // Get all possible groups that sum to a third of the total. Then check each for if
-  // the remaining numbers can be partitioned into 2 equal groups. From there, we minimize
-  // the size of the initial group and the quantum entanglement (product)
+  // Recursively try to pick out a group from the data that sums to 1/3 of the data.
+  // Start with the largest numbers, since they will result in the smallest group size.
+  // When we find one, check to see if the remaining data can be partitioned into groups too.
+  // If it can be partitioned, we can possibly update the minimum size and minimum product.
   first(input: string): number {
-    const data = this.parseData(input);
+    const data = this.parseData(input).reverse();
     const targetSize = data.reduce((a, b) => a + b, 0) / 3;
-    const groups = this.findAllGroups(targetSize, data);
 
-    const doesPartitionIntoEqualSums = (
-      data: number[],
-      index: number,
-      sum: number = 0,
-    ): boolean => {
-      if (index === -1 && sum === targetSize) {
-        return true;
-      }
-      if (index === -1) return false;
-      return (
-        doesPartitionIntoEqualSums(data, index - 1, sum + data[index]) ||
-        doesPartitionIntoEqualSums(data, index - 1, sum)
-      );
+    const result: Result = {
+      size: Infinity,
+      product: Infinity,
     };
 
-    let minSolution = { size: Infinity, product: Infinity };
-    for (const group of groups) {
-      if (
-        doesPartitionIntoEqualSums(group.remainder, group.remainder.length - 1)
-      ) {
-        const size = group.group.length;
-        const product = group.group.reduce((p, a) => a * p, 1);
-        if (size < minSolution.size) {
-          minSolution = { size, product };
-        } else if (size === minSolution.size && product < minSolution.product) {
-          minSolution = { size, product };
-        }
-      }
-    }
-
-    return minSolution.product;
+    this.searchForMinPackageGroup(data, targetSize, result);
+    return result.product;
   }
 
-  // Partition the data into halves, then do so again for each half. If the data can partition,
-  // we need to look through all groups to minimize size and quantum entanglement (product).
-  // This took about 32 minutes to run, so it is definitely not optimized
+  // Do the same as part 1, but with a new target size
   second(input: string): number {
-    const data = this.parseData(input);
+    const data = this.parseData(input).reverse();
     const targetSize = data.reduce((a, b) => a + b, 0) / 4;
-    const halves = this.findAllGroups(targetSize * 2, data);
 
-    const computedResults = new Map<string, boolean>();
-    const groupsToCheck = new Set<string>();
-    for (const pair of halves) {
-      const firstHalfKey = pair.group.sort().join("-");
-      const secondHalfKey = pair.remainder.sort().join("-");
-      if (!computedResults.has(firstHalfKey)) {
-        if (
-          computedResults.has(secondHalfKey) &&
-          !computedResults.get(secondHalfKey)
-        ) {
-          continue;
-        }
-        const firstHalfHalves = this.findAllGroups(targetSize, pair.group);
-        firstHalfHalves.forEach((group) => {
-          groupsToCheck.add(group.group.sort().join("-"));
-          groupsToCheck.add(group.remainder.sort().join("-"));
-        });
-        computedResults.set(firstHalfKey, firstHalfHalves.length === 0);
-        if (firstHalfHalves.length === 0) continue;
-      }
+    const result: Result = {
+      size: Infinity,
+      product: Infinity,
+    };
 
-      if (!computedResults.has(secondHalfKey)) {
-        if (
-          computedResults.has(firstHalfKey) &&
-          !computedResults.get(firstHalfKey)
-        ) {
-          continue;
-        }
-        const secondHalfHalves = this.findAllGroups(targetSize, pair.remainder);
-        secondHalfHalves.forEach((group) => {
-          groupsToCheck.add(group.group.sort().join("-"));
-          groupsToCheck.add(group.remainder.sort().join("-"));
-        });
-        computedResults.set(secondHalfKey, secondHalfHalves.length === 0);
-        if (secondHalfHalves.length === 0) continue;
-      }
-    }
-
-    let minSolution = { size: Infinity, product: Infinity };
-    for (const group of groupsToCheck) {
-      const numbers = group.split("-");
-      const size = numbers.length;
-      const product = group.split("-").reduce((p, a) => Number(a) * p, 1);
-      if (size < minSolution.size) {
-        minSolution = { size, product };
-      } else if (size === minSolution.size && product < minSolution.product) {
-        minSolution = { size, product };
-      }
-    }
-    return minSolution.product;
+    this.searchForMinPackageGroup(data, targetSize, result);
+    return result.product;
   }
 
   private parseData(input: string): number[] {
     return input.split("\n").map(Number);
   }
 
-  // Recursive entrypoint to get all groups from the data with a sum equal to the target
-  private findAllGroups(target: number, data: number[]) {
-    const groups: Grouping[] = [];
-    this.findAllGroupsRecurse(
-      target,
-      data,
-      data.length - 1,
-      0,
-      { group: [], remainder: [] },
-      groups,
-    );
-    return groups;
-  }
-
-  private findAllGroupsRecurse(
-    target: number,
-    data: number[],
-    index: number,
-    sum: number,
-    currentGroup: Grouping,
-    groups: Grouping[],
+  // This is the recursive function to get the minimum package groups
+  private searchForMinPackageGroup(
+    remaining: number[],
+    targetSize: number,
+    result: Result,
+    group: number[] = [],
+    sum: number = 0,
+    index: number = 0,
   ) {
-    if (index === -1 && sum === target) {
-      groups.push(currentGroup);
-      return;
+    if (group.length > result.size || sum > targetSize) return;
+    if (sum === targetSize) {
+      if (!this.doesPartition(remaining, targetSize)) return;
+      const product = group.reduce((product, num) => product * num, 1);
+      if (group.length < result.size || product < result.product) {
+        result.size = group.length;
+        result.product = product;
+      }
     }
-    if (index === -1) return;
-    const newGroupingIfAdd: Grouping = {
-      group: [...currentGroup.group, data[index]],
-      remainder: [...currentGroup.remainder],
-    };
-    const newGroupingIfNotAdd: Grouping = {
-      group: [...currentGroup.group],
-      remainder: [...currentGroup.remainder, data[index]],
-    };
-    if (sum + data[index] <= target) {
-      this.findAllGroupsRecurse(
-        target,
-        data,
-        index - 1,
-        sum + data[index],
-        newGroupingIfAdd,
-        groups,
+
+    for (let i = index; i < remaining.length; i++) {
+      const newRemaining = [...remaining];
+      newRemaining.splice(i, 1);
+      this.searchForMinPackageGroup(
+        newRemaining,
+        targetSize,
+        result,
+        [...group, remaining[i]],
+        sum + remaining[i],
+        i,
       );
     }
-    this.findAllGroupsRecurse(
-      target,
-      data,
-      index - 1,
-      sum,
-      newGroupingIfNotAdd,
-      groups,
-    );
+  }
+
+  // This is a very similar structure, but only checks if it can be partitioned
+  private doesPartition(
+    remaining: number[],
+    targetSize: number,
+    sum: number = 0,
+    index: number = 0,
+  ): boolean {
+    if (sum > targetSize) return false;
+    if (sum === targetSize) {
+      if (remaining.length === 0) return true;
+      return this.doesPartition(remaining, targetSize);
+    }
+
+    for (let i = index; i < remaining.length; i++) {
+      const newRemaining = [...remaining];
+      newRemaining.splice(i, 1);
+      const doesItPartition = this.doesPartition(
+        newRemaining,
+        targetSize,
+        sum + remaining[i],
+        i,
+      );
+      if (doesItPartition) return true;
+    }
+    return false;
   }
 }
