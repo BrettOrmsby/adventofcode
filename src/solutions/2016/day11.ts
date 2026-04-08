@@ -1,5 +1,13 @@
 import type { Solution } from "../../common/index.ts";
 
+/**
+ * V2 Improvements:
+ * - If 2 items of the same type can be brought up, don't try bringing up only 1
+ * - If there are no items bellow the current floor, don't try to bring a chip down
+ * - If there are matching chips and generators on the exact same floors, only
+ *   try one of the pairings
+ * */
+
 export class Day11Year2016 implements Solution {
   // Breadth first algorithm to check all possible situations until
   // the finishing point is identified. The data is stored as bit strings.
@@ -62,6 +70,29 @@ export class Day11Year2016 implements Solution {
         return steps;
       }
 
+      const lowestDuplicate = new Map<number, number>();
+      for (let i = 0; i < bitTypes; i++) {
+        lowestDuplicate.set(i, Infinity);
+      }
+      for (let i = 0; i < bitTypes; i++) {
+        let chipPos = -1;
+        let generatorPos = -1;
+        for (let j = 0; j < floors.length; j++) {
+          const hasChip = (floors[j] >> (i * 2)) & 1;
+          if (hasChip) chipPos = j;
+          const hasGenerator = (floors[j] >> (i * 2 + 1)) & 1;
+          if (hasGenerator) generatorPos = j;
+        }
+        for (let j = i + 1; j < bitTypes; j++) {
+          if (lowestDuplicate.get(i)! !== Infinity) continue;
+          const hasSameChip = (floors[chipPos] >> (i * 2)) & 1;
+          const hasSameGenerator = (floors[generatorPos] >> (i * 2 + 1)) & 1;
+          if (hasSameChip && hasSameGenerator) {
+            lowestDuplicate.set(j, i);
+          }
+        }
+      }
+
       const isOnTopFloor = floor === floors.length - 1;
 
       // Try moving one chip up and its matching generator
@@ -83,15 +114,19 @@ export class Day11Year2016 implements Solution {
 
       // Try moving a generator up
       if (!isOnTopFloor) {
+        let hasBrought2 = false;
+        const singles = [];
         for (let i = 0; i < bitTypes; i++) {
           const hasGenerator = (floors[floor] >> (i * 2 + 1)) & 1;
           if (!hasGenerator) continue;
 
-          const newFloors = [...floors];
-          newFloors[floor] &= ~(1 << (i * 2 + 1)); // Clear Generator
-          newFloors[floor + 1] |= 1 << (i * 2 + 1); // Set Generator
-          if (isSafeState(newFloors)) {
-            nextStack.push({ floor: floor + 1, floors: newFloors });
+          if (!hasBrought2 && i < lowestDuplicate.get(i)!) {
+            const newFloors = [...floors];
+            newFloors[floor] &= ~(1 << (i * 2 + 1)); // Clear Generator
+            newFloors[floor + 1] |= 1 << (i * 2 + 1); // Set Generator
+            if (isSafeState(newFloors)) {
+              singles.push({ floor: floor + 1, floors: newFloors });
+            }
           }
 
           // Try moving 2 generators up
@@ -105,23 +140,29 @@ export class Day11Year2016 implements Solution {
             newFloors[floor] &= ~(1 << (j * 2 + 1)); // Clear Generator
             newFloors[floor + 1] |= 1 << (j * 2 + 1); // Set Generator
             if (isSafeState(newFloors)) {
+              hasBrought2 = true;
               nextStack.push({ floor: floor + 1, floors: newFloors });
             }
           }
         }
+        if (!hasBrought2) nextStack.push(...singles);
       }
 
       // Try moving one chip up
       if (!isOnTopFloor) {
+        let hasBrought2 = false;
+        const singles = [];
         for (let i = 0; i < bitTypes; i++) {
           const hasChip = (floors[floor] >> (i * 2)) & 1;
           if (!hasChip) continue;
 
-          const newFloors = [...floors];
-          newFloors[floor] &= ~(1 << (i * 2)); // Clear Chip
-          newFloors[floor + 1] |= 1 << (i * 2); // Set Chip
-          if (isSafeState(newFloors)) {
-            nextStack.push({ floor: floor + 1, floors: newFloors });
+          if (!hasBrought2 && i < lowestDuplicate.get(i)!) {
+            const newFloors = [...floors];
+            newFloors[floor] &= ~(1 << (i * 2)); // Clear Chip
+            newFloors[floor + 1] |= 1 << (i * 2); // Set Chip
+            if (isSafeState(newFloors)) {
+              singles.push({ floor: floor + 1, floors: newFloors });
+            }
           }
 
           // Try moving 2 chips up
@@ -135,23 +176,34 @@ export class Day11Year2016 implements Solution {
             newFloors[floor] &= ~(1 << (j * 2)); // Clear Chip
             newFloors[floor + 1] |= 1 << (j * 2); // Set Chip
             if (isSafeState(newFloors)) {
+              hasBrought2 = true;
               nextStack.push({ floor: floor + 1, floors: newFloors });
             }
           }
         }
+        if (!hasBrought2) nextStack.push(...singles);
       }
 
       // Try moving a chip down
       if (floor !== 0) {
-        for (let i = 0; i < bitTypes; i++) {
-          const hasChip = (floors[floor] >> (i * 2)) & 1;
-          if (!hasChip) continue;
+        let allFloorsBellowEmpty = true;
+        for (let i = 0; i < floor; i++) {
+          if (floors[i] !== 0) {
+            allFloorsBellowEmpty = false;
+            break;
+          }
+        }
+        if (!allFloorsBellowEmpty) {
+          for (let i = 0; i < bitTypes; i++) {
+            const hasChip = (floors[floor] >> (i * 2)) & 1;
+            if (!hasChip) continue;
 
-          const newFloors = [...floors];
-          newFloors[floor] &= ~(1 << (i * 2)); // Clear Chip
-          newFloors[floor - 1] |= 1 << (i * 2); // Set Chip
-          if (isSafeState(newFloors)) {
-            nextStack.push({ floor: floor - 1, floors: newFloors });
+            const newFloors = [...floors];
+            newFloors[floor] &= ~(1 << (i * 2)); // Clear Chip
+            newFloors[floor - 1] |= 1 << (i * 2); // Set Chip
+            if (isSafeState(newFloors)) {
+              nextStack.push({ floor: floor - 1, floors: newFloors });
+            }
           }
         }
       }
