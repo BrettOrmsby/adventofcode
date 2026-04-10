@@ -10,3 +10,4 @@ export * from "./day09.ts";
 export * from "./day10.ts";
 export * from "./day11.ts";
 export * from "./day12.ts";
+export * from "./day13.ts";
