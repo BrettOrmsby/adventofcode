@@ -74,6 +74,33 @@ export class WeightedGraph<T> {
     return min;
   }
 
+  public dijkstra(start: T): Map<T, number> {
+    const distances = new Map<T, number>();
+    this.graph.keys().forEach((k) => distances.set(k, Infinity));
+    distances.set(start, 0);
+
+    // Note: this is not a real priority queue
+    const priorityQueue = [start];
+    while (priorityQueue.length) {
+      const minNodeIndex: number = priorityQueue.reduce(
+        (minI, node, i) =>
+          distances.get(node)! < distances.get(priorityQueue[minI])! ? i : minI,
+        0,
+      );
+      const [node] = priorityQueue.splice(minNodeIndex, 1);
+
+      for (const neighbor of this.outEdges(node)) {
+        const alt = distances.get(node)! + this.graph.get(node)!.get(neighbor)!;
+        if (alt < distances.get(neighbor)!) {
+          distances.set(neighbor, alt);
+          priorityQueue.push(neighbor);
+        }
+      }
+    }
+
+    return distances;
+  }
+
   public longestCompletePath(): number {
     const numberOfNodes = this.graph.size;
 
